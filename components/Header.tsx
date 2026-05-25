@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, User, ShoppingBag, Menu, X, LogOut, LayoutDashboard } from 'lucide-react';
 import dynamic from 'next/dynamic';
@@ -25,7 +25,21 @@ const NAV_LINKS = [
   { label: 'Contact', href: '/contact' },
 ];
 
+// Outer Header wraps the inner one in Suspense — required because
+// useSearchParams() suspends during static prerender (Next.js 15 behavior).
 export function Header() {
+  return (
+    <Suspense
+      fallback={
+        <div className="fixed top-0 left-0 right-0 z-50 bg-cream/95 backdrop-blur-md h-[88px] border-b border-transparent" />
+      }
+    >
+      <HeaderInner />
+    </Suspense>
+  );
+}
+
+function HeaderInner() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { user, cartCount, setUser, setCartCount } = useStore();

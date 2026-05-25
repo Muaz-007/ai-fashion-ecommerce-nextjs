@@ -52,7 +52,7 @@ export default async function ShopPage({ searchParams }: PageProps) {
     <>
       <Header />
       <Toast />
-      <main>
+      <main id="main-content">
         <ShopClient
           initialProducts={products}
           categories={categories}

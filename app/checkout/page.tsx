@@ -8,7 +8,7 @@ export default function CheckoutPage() {
     <>
       <Header />
       <Toast />
-      <main>
+      <main id="main-content">
         <section className="pt-44 md:pt-52 pb-12 text-center bg-gradient-to-b from-cream-200 to-cream">
           <div className="container-padded">
             <div className="eyebrow mb-4">Almost There</div>

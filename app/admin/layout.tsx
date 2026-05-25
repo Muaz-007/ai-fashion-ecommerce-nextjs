@@ -20,7 +20,7 @@ export default async function AdminLayout({
   return (
     <div className="min-h-screen bg-cream md:grid md:grid-cols-[260px_1fr]">
       <AdminSidebar firstName={session.firstName} />
-      <main className="p-5 sm:p-6 md:p-12">{children}</main>
+      <main id="main-content" className="p-5 sm:p-6 md:p-12">{children}</main>
     </div>
   );
 }

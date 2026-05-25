@@ -212,7 +212,7 @@ export function ShopClient({ initialProducts, categories, activeCategory, search
           </aside>
 
           {/* Products */}
-          <main>
+          <section aria-label="Products">
             <div className="flex justify-between items-center mb-8 pb-6 border-b border-border flex-wrap gap-4">
               <div className="text-sm text-muted">
                 Showing {filtered.length} {filtered.length === 1 ? 'product' : 'products'}
@@ -247,7 +247,7 @@ export function ShopClient({ initialProducts, categories, activeCategory, search
                 No products match your filters.
               </div>
             )}
-          </main>
+          </section>
         </div>
       </div>
     </>

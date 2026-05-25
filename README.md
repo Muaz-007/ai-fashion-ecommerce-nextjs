@@ -28,14 +28,6 @@ npm run db:seed      # Populate sample products + accounts
 npm run dev          # http://localhost:3000
 ```
 
-### Default Credentials
-
-| Role | Email | Password |
-|------|-------|----------|
-| Admin | admin@maisonaurelle.pk | password123 |
-| Customer | sara@example.com | password123 |
-| Customer | fatima@example.com | password123 |
-
 ---
 
 ## Stack

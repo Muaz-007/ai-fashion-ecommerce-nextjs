@@ -49,7 +49,7 @@ export default async function ProductPage({ params }: PageProps) {
     <>
       <Header />
       <Toast />
-      <main>
+      <main id="main-content">
         <section className="pt-44 md:pt-52 pb-24">
           <div className="container-padded">
             <nav className="flex gap-3 text-sm text-muted uppercase tracking-wider mb-8">

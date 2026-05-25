@@ -46,7 +46,7 @@ export default async function HomePage() {
     <>
       <Header />
       <Toast />
-      <main>
+      <main id="main-content">
         <Hero />
 
         {/* Collections */}

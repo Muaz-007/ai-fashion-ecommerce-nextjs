@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import Link from 'next/link';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
@@ -5,8 +6,10 @@ import { Footer } from '@/components/Footer';
 export default function NotFound() {
   return (
     <>
-      <Header />
-      <main className="min-h-[60vh] flex items-center">
+      <Suspense fallback={<div className="h-32" />}>
+        <Header />
+      </Suspense>
+      <main id="main-content" className="min-h-[60vh] flex items-center">
         <div className="container-padded text-center py-24">
           <div className="font-display text-[10rem] text-accent/20 leading-none mb-4">
             404

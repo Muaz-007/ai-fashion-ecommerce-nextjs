@@ -3,7 +3,7 @@
 import { useState, FormEvent, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { X, Plus, Upload, Loader2 } from 'lucide-react';
+import { X, Plus, Upload, Loader2, Sparkles } from 'lucide-react';
 import { ProductPlaceholder } from '@/components/ProductPlaceholder';
 import { Select } from '@/components/Select';
 import { confirmDialog } from '@/components/ConfirmDialog';
@@ -65,6 +65,12 @@ export function ProductForm({ categories, initial }: ProductFormProps) {
 
   // Controlled state
   const [name, setName] = useState(initial?.name ?? '');
+  const [description, setDescription] = useState(initial?.description ?? '');
+  const [material, setMaterial] = useState(initial?.material ?? '');
+  const [careInstructions, setCareInstructions] = useState(initial?.careInstructions ?? '');
+  const [price, setPrice] = useState<string>(
+    initial?.price != null ? String(initial.price) : ''
+  );
   const [gradient, setGradient] = useState(initial?.gradient ?? GRADIENT_PRESETS[0].value);
   const [variant, setVariant] = useState<string>('');
   const [categoryId, setCategoryId] = useState<number>(
@@ -80,6 +86,7 @@ export function ProductForm({ categories, initial }: ProductFormProps) {
   // Image upload state
   const [imageUrl, setImageUrl] = useState<string | null>(initial?.imageUrl ?? null);
   const [uploading, setUploading] = useState(false);
+  const [analyzing, setAnalyzing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const categoryName = categories.find((c) => c.id === categoryId)?.name;
@@ -146,6 +153,75 @@ export function ProductForm({ categories, initial }: ProductFormProps) {
     if (file && file.type.startsWith('image/')) handleImageUpload(file);
   }
 
+  /**
+   * Send the currently-uploaded image to Gemini Vision and pre-fill
+   * name, description, material, care, tags, category & price.
+   * Never overwrites fields the admin has already filled in.
+   */
+  async function handleAnalyzeWithAI() {
+    if (!imageUrl) {
+      showToast('Upload an image first');
+      return;
+    }
+    setAnalyzing(true);
+    try {
+      // Re-download the uploaded image so we can POST it as multipart form-data
+      const imgRes = await fetch(imageUrl);
+      if (!imgRes.ok) throw new Error('Could not load image');
+      const blob = await imgRes.blob();
+      const file = new File([blob], 'analyze.jpg', { type: blob.type || 'image/jpeg' });
+
+      const fd = new FormData();
+      fd.append('file', file);
+
+      const res = await fetch('/api/admin/ai/describe-product', {
+        method: 'POST',
+        body: fd,
+      });
+      const data = await res.json();
+
+      if (!data.success) {
+        showToast(data.message ?? 'AI analysis failed');
+        return;
+      }
+
+      const d = data.data as {
+        name: string;
+        description: string;
+        material: string;
+        careInstructions: string;
+        tags: string[];
+        suggestedCategory: string;
+        estimatedPriceRange: { min: number; max: number };
+      };
+
+      // Only pre-fill empty fields — never trample admin's work
+      if (!name) setName(d.name);
+      if (!description) setDescription(d.description);
+      if (!material) setMaterial(d.material);
+      if (!careInstructions) setCareInstructions(d.careInstructions);
+      if (!price && d.estimatedPriceRange?.min) {
+        setPrice(String(d.estimatedPriceRange.min));
+      }
+
+      // Tags: append non-duplicates
+      const newTags = (d.tags ?? []).filter((t) => !tags.includes(t));
+      if (newTags.length) setTags([...tags, ...newTags]);
+
+      // Category: switch if AI suggestion matches a known category
+      const matched = categories.find(
+        (c) => c.name.toLowerCase() === d.suggestedCategory?.toLowerCase()
+      );
+      if (matched) setCategoryId(matched.id);
+
+      showToast('AI suggestions applied — review before saving');
+    } catch {
+      showToast('AI analysis failed');
+    } finally {
+      setAnalyzing(false);
+    }
+  }
+
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setSubmitting(true);
@@ -153,13 +229,13 @@ export function ProductForm({ categories, initial }: ProductFormProps) {
     const fd = new FormData(e.currentTarget);
 
     const payload = {
-      name: String(fd.get('name')),
+      name,
       categoryId,
       sku: String(fd.get('sku')) || undefined,
-      description: String(fd.get('description')) || undefined,
-      material: String(fd.get('material')) || undefined,
-      careInstructions: String(fd.get('careInstructions')) || undefined,
-      price: Number(fd.get('price')),
+      description: description || undefined,
+      material: material || undefined,
+      careInstructions: careInstructions || undefined,
+      price: Number(price),
       originalPrice: fd.get('originalPrice') ? Number(fd.get('originalPrice')) : null,
       stockQuantity: Number(fd.get('stockQuantity')),
       gradient,
@@ -272,7 +348,8 @@ export function ProductForm({ categories, initial }: ProductFormProps) {
             <textarea
               name="description"
               rows={4}
-              defaultValue={initial?.description ?? ''}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
               placeholder="Story behind the piece — fabric, craft, occasion..."
               className="form-input resize-y min-h-[100px]"
             />
@@ -283,7 +360,8 @@ export function ProductForm({ categories, initial }: ProductFormProps) {
               <input
                 type="text"
                 name="material"
-                defaultValue={initial?.material ?? ''}
+                value={material}
+                onChange={(e) => setMaterial(e.target.value)}
                 placeholder="e.g. 100% Mulberry Silk"
                 className="form-input"
               />
@@ -293,7 +371,8 @@ export function ProductForm({ categories, initial }: ProductFormProps) {
               <input
                 type="text"
                 name="careInstructions"
-                defaultValue={initial?.careInstructions ?? ''}
+                value={careInstructions}
+                onChange={(e) => setCareInstructions(e.target.value)}
                 placeholder="e.g. Dry Clean Only"
                 className="form-input"
               />
@@ -328,7 +407,25 @@ export function ProductForm({ categories, initial }: ProductFormProps) {
                   sizes="(max-width: 768px) 100vw, 50vw"
                   unoptimized
                 />
-                <div className="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-ink/80 to-transparent flex justify-end gap-2">
+                <div className="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-ink/80 to-transparent flex justify-end gap-2 flex-wrap">
+                  <button
+                    type="button"
+                    onClick={handleAnalyzeWithAI}
+                    disabled={analyzing}
+                    className="px-4 py-2 bg-accent text-cream text-xs uppercase tracking-wider flex items-center gap-2 disabled:opacity-60"
+                  >
+                    {analyzing ? (
+                      <>
+                        <Loader2 size={12} className="animate-spin" />
+                        Analyzing…
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles size={12} />
+                        Analyze with AI
+                      </>
+                    )}
+                  </button>
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
@@ -356,8 +453,9 @@ export function ProductForm({ categories, initial }: ProductFormProps) {
                 </div>
                 <p className="font-medium mb-1">Drop an image here, or click to browse</p>
                 <p className="text-xs text-muted">JPEG, PNG, WebP, or GIF · Max 5MB</p>
-                <p className="text-xs text-muted-light mt-3">
-                  Leave empty to use the elegant gradient placeholder
+                <p className="inline-flex items-center gap-1.5 text-xs text-accent mt-4 px-3 py-1.5 bg-accent/10 rounded-full">
+                  <Sparkles size={11} />
+                  After upload — auto-fill name, description &amp; tags with AI
                 </p>
               </button>
             )}
@@ -383,7 +481,8 @@ export function ProductForm({ categories, initial }: ProductFormProps) {
                 required
                 min="0"
                 step="100"
-                defaultValue={initial?.price ?? ''}
+                value={price}
+                onChange={(e) => setPrice(e.target.value)}
                 placeholder="8500"
                 className="form-input"
               />

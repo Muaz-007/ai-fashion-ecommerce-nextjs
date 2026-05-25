@@ -9,6 +9,7 @@
 import { prisma } from './prisma';
 import { unstable_cache } from 'next/cache';
 import type { Prisma } from '@prisma/client';
+import { rerankRecommendations } from './ai/recommendations';
 
 const ACTIVITY_WEIGHTS: Record<string, number> = {
   view: 1,
@@ -54,19 +55,62 @@ export async function getPersonalizedRecommendations(
     include: productInclude,
   });
 
+  // Rule-based scoring — produces a strong candidate pool
   const scored = products
     .map((product) => ({
       product,
       score: scoreProductForUser(product, profile),
     }))
     .filter((s) => s.score > 0)
-    .sort((a, b) => b.score - a.score)
-    .slice(0, limit);
+    .sort((a, b) => b.score - a.score);
 
+  // For engaged users (warm/hot), let Gemini re-rank the top candidates
+  // for a smarter, more stylist-like final selection. Cold users keep
+  // the rule-based order (no signal for AI to work with anyway).
+  if (profile.strength !== 'cold' && scored.length > limit) {
+    const topCandidates = scored.slice(0, Math.min(20, scored.length)).map((s) => s.product);
+
+    // Pull the user's most recently viewed product names for context
+    const recentActivity = userId || sessionId
+      ? await prisma.userActivity.findMany({
+          where: userId ? { userId } : { sessionId: sessionId! },
+          include: { product: { select: { name: true } } },
+          orderBy: { createdAt: 'desc' },
+          take: 5,
+        })
+      : [];
+
+    const aiPick = await rerankRecommendations({
+      userInterests: profile.categories,
+      priceRange: { min: profile.priceMin, max: profile.priceMax },
+      recentlyViewedNames: recentActivity.map((a) => a.product.name),
+      candidates: topCandidates,
+      pick: limit,
+    });
+
+    if (aiPick) {
+      const productMap = new Map(topCandidates.map((p) => [p.id, p]));
+      const aiOrdered = aiPick.productIds
+        .map((id) => productMap.get(id))
+        .filter((p): p is NonNullable<typeof p> => p != null)
+        .map((p) => ({ ...p, aiScore: 100 }));
+
+      return {
+        recommendations: aiOrdered,
+        profileStrength: profile.strength,
+        reasoning: [aiPick.reason, ...profile.reasoning],
+        aiPowered: true,
+      };
+    }
+  }
+
+  // Fallback: rule-based ordering
+  const top = scored.slice(0, limit);
   return {
-    recommendations: scored.map((s) => ({ ...s.product, aiScore: Math.round(s.score * 100) / 100 })),
+    recommendations: top.map((s) => ({ ...s.product, aiScore: Math.round(s.score * 100) / 100 })),
     profileStrength: profile.strength,
     reasoning: profile.reasoning,
+    aiPowered: false,
   };
 }
 

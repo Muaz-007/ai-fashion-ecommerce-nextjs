@@ -1,7 +1,8 @@
 import { prisma } from '@/lib/prisma';
 import { AdminPageHeader } from '../AdminPageHeader';
-import { Lightbulb, Clock, TrendingUp, MapPin } from 'lucide-react';
+import { Lightbulb, Clock, TrendingUp, MapPin, Sparkles } from 'lucide-react';
 import { formatPrice, cn } from '@/lib/utils';
+import { generateBusinessInsights } from '@/lib/ai/insights';
 
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Customer Insights · Admin' };
@@ -95,40 +96,19 @@ export default async function InsightsPage() {
     take: 5,
   });
 
-  // AI-generated insights
-  const insights: { type: string; message: string; tone: 'positive' | 'neutral' | 'warning' }[] = [];
+  // Real AI-generated insights (Gemini) with rule-based fallback
+  const insights = await generateBusinessInsights({
+    totalCustomers,
+    segments: segmentCounts,
+    categoryStats,
+    peakHour,
+    topCities: cityAgg.map((c) => ({
+      city: c.shippingCity ?? 'Unknown',
+      orders: c._count,
+    })),
+  });
 
-  if (categoryStats[0]) {
-    insights.push({
-      type: 'Product Strategy',
-      message: `${categoryStats[0].name} drives the highest revenue (${formatPrice(categoryStats[0].revenue)}). Consider expanding inventory in this category.`,
-      tone: 'positive',
-    });
-  }
-
-  if (peakHour.count > 0) {
-    insights.push({
-      type: 'Marketing Timing',
-      message: `Most orders place between ${peakHour.hour}:00 and ${peakHour.hour + 1}:00. Schedule promotional emails 1-2 hours before this window.`,
-      tone: 'neutral',
-    });
-  }
-
-  if (segmentCounts.New > segmentCounts.Active + segmentCounts.Loyal) {
-    insights.push({
-      type: 'Retention Risk',
-      message: `${segmentCounts.New} customers haven't made their first purchase. Consider a welcome offer to convert them.`,
-      tone: 'warning',
-    });
-  }
-
-  if (segmentCounts.VIP > 0) {
-    insights.push({
-      type: 'Loyalty Opportunity',
-      message: `You have ${segmentCounts.VIP} VIP customers. Personalized previews & private events drive 3× retention for this segment.`,
-      tone: 'positive',
-    });
-  }
+  const aiPowered = insights.some((i) => i.source === 'ai');
 
   return (
     <div>
@@ -142,10 +122,22 @@ export default async function InsightsPage() {
       <div className="bg-cream border border-accent mb-10 p-8" style={{
         background: 'linear-gradient(135deg, #FAF7F2 0%, rgba(176, 141, 90, 0.06) 100%)',
       }}>
-        <h3 className="font-display text-2xl mb-6 pb-5 border-b border-accent/20 flex items-center gap-3">
-          <Lightbulb size={20} className="text-accent" />
-          AI-Generated Insights
-        </h3>
+        <div className="flex items-center justify-between mb-6 pb-5 border-b border-accent/20 gap-3 flex-wrap">
+          <h3 className="font-display text-2xl flex items-center gap-3">
+            <Lightbulb size={20} className="text-accent" />
+            AI-Generated Insights
+          </h3>
+          {aiPowered ? (
+            <span className="inline-flex items-center gap-2 text-[10px] uppercase tracking-widest text-accent bg-accent/10 px-3 py-1.5 rounded-full font-medium">
+              <Sparkles size={12} />
+              Gemini 2.0
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-2 text-[10px] uppercase tracking-widest text-muted bg-cream-200 px-3 py-1.5 rounded-full">
+              Rule-based fallback
+            </span>
+          )}
+        </div>
         {insights.length === 0 ? (
           <p className="text-muted text-sm">No insights available yet — keep gathering data.</p>
         ) : (

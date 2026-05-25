@@ -123,8 +123,8 @@ export function ProductDetailClient({ product }: { product: Product }) {
 
   return (
     <div className="grid md:grid-cols-[1.2fr_1fr] gap-16 lg:gap-20">
-      {/* Gallery */}
-      <div className="grid md:grid-cols-[80px_1fr] gap-4">
+      {/* Gallery — block on mobile (no grid quirks), thumb+image grid on desktop */}
+      <div className="block md:grid md:grid-cols-[80px_1fr] md:gap-4">
         <div className="hidden md:flex flex-col gap-3">
           {thumbs.map((bg, i) => (
             <button
@@ -145,7 +145,7 @@ export function ProductDetailClient({ product }: { product: Product }) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.3 }}
-          className="aspect-[3/4] overflow-hidden relative"
+          className="aspect-[4/5] md:aspect-[3/4] overflow-hidden relative w-full mx-auto"
         >
           <ProductPlaceholder
             productId={product.id}

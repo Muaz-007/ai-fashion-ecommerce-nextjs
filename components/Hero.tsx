@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { useEffect, useRef } from 'react';
 import { ProductPlaceholder } from './ProductPlaceholder';
+import { cn } from '@/lib/utils';
 
 export function Hero() {
   // Mouse-tracking for subtle parallax depth on the visual blocks
@@ -51,9 +52,9 @@ export function Hero() {
   return (
     <section
       ref={heroRef}
-      className="relative min-h-screen flex items-center overflow-hidden pt-[120px] bg-gradient-to-br from-cream-200 via-cream to-cream-300"
+      className="relative md:min-h-screen flex items-center overflow-hidden pt-44 md:pt-[120px] pb-12 md:pb-0 bg-gradient-to-br from-cream-200 via-cream to-cream-300"
     >
-      {/* Decorative oversized text */}
+      {/* Decorative oversized text (desktop only) */}
       <div
         aria-hidden
         className="absolute top-[10%] -left-[5%] font-display italic text-[12rem] text-accent/[0.08] leading-none pointer-events-none hidden md:block select-none"
@@ -61,7 +62,15 @@ export function Hero() {
         Aurelle
       </div>
 
-      {/* Floating animated ornament (gold filigree) */}
+      {/* Mobile decorative ornament — top-right, subtle */}
+      <div
+        aria-hidden
+        className="absolute top-[100px] -right-12 md:hidden pointer-events-none opacity-60"
+      >
+        <FiligreeOrnament size={160} />
+      </div>
+
+      {/* Floating animated ornament (desktop) */}
       <motion.div
         style={{ x: ornamentX, y: ornamentY }}
         className="absolute top-[14%] right-[4%] hidden lg:block pointer-events-none"
@@ -69,22 +78,23 @@ export function Hero() {
         <FiligreeOrnament />
       </motion.div>
 
-      <div className="container-padded grid md:grid-cols-2 gap-16 lg:gap-24 items-center w-full relative z-10">
-        {/* Text content */}
+      <div className="container-padded grid md:grid-cols-2 gap-10 md:gap-16 lg:gap-24 items-center w-full relative z-10">
+        {/* Text content — centered on mobile (balanced), left on desktop */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: [0.4, 0, 0.2, 1] }}
-          className="relative z-10"
+          className="relative z-10 text-center md:text-left"
         >
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="eyebrow mb-4 flex items-center gap-3"
+            className="eyebrow mb-4 flex items-center gap-3 justify-center md:justify-start"
           >
             <span className="w-8 h-px bg-accent" />
             Spring · Summer 2026 Collection
+            <span className="w-8 h-px bg-accent md:hidden" />
           </motion.div>
 
           <h1 className="text-display-xl mb-6 leading-[1.05] text-balance">
@@ -112,12 +122,16 @@ export function Hero() {
             Meets the Modern Woman
           </h1>
 
-          <p className="text-lg text-muted max-w-md mb-10 leading-relaxed">
+          <p className="text-lg text-muted max-w-md mb-10 leading-relaxed mx-auto md:mx-0">
             Discover timeless silhouettes, hand-crafted by Pakistan&apos;s master artisans — now curated for you by intelligent personalization.
           </p>
 
-          <div className="flex gap-5 flex-wrap">
-            <Link href="/shop" className="btn btn-primary group/btn">
+          {/* Buttons: stacked & full-width on mobile, inline on desktop */}
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-5 sm:flex-wrap">
+            <Link
+              href="/shop"
+              className="btn btn-primary group/btn w-full sm:w-auto justify-center"
+            >
               <span>Explore Collection</span>
               <motion.span
                 className="inline-block"
@@ -127,13 +141,13 @@ export function Hero() {
                 →
               </motion.span>
             </Link>
-            <Link href="/about" className="btn btn-secondary">
+            <Link href="/about" className="btn btn-secondary w-full sm:w-auto justify-center">
               Our Atelier
             </Link>
           </div>
         </motion.div>
 
-        {/* Visual area with parallax */}
+        {/* Visual area — desktop parallax product cards (hidden on mobile) */}
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -166,16 +180,101 @@ export function Hero() {
               gradient="linear-gradient(135deg, #1A1614 0%, #3A2E26 100%)"
             />
           </motion.div>
+        </motion.div>
 
+        {/* MOBILE EDITORIAL COMPOSITION — replaces fake placeholder cards */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.9, delay: 0.6 }}
+          className="md:hidden relative mt-2 pt-8"
+        >
+          {/* Top hairline divider with center diamond */}
+          <div className="flex items-center gap-3 mb-8">
+            <span className="flex-1 h-px bg-gradient-to-r from-transparent via-accent/40 to-accent/40" />
+            <span className="w-1.5 h-1.5 bg-accent rotate-45" />
+            <span className="flex-1 h-px bg-gradient-to-l from-transparent via-accent/40 to-accent/40" />
+          </div>
+
+          {/* Roman numeral year — decorative, oversized */}
+          <div className="text-center mb-6">
+            <div className="font-display italic text-7xl leading-none text-accent/90 tracking-tighter">
+              MMXXVI
+            </div>
+            <div className="text-[10px] uppercase tracking-[0.4em] text-muted mt-2">
+              The Spring Edit
+            </div>
+          </div>
+
+          {/* Italianno script signature */}
+          <p
+            className="text-center text-3xl text-ink/80 mb-8 leading-tight"
+            style={{ fontFamily: 'var(--font-script)' }}
+          >
+            an atelier where heritage breathes
+          </p>
+
+          {/* Three brand credential pillars */}
+          <div className="grid grid-cols-3 gap-2 py-6 border-y border-accent/20">
+            {[
+              { num: '30+', label: 'Master Artisans' },
+              { num: 'AI', label: 'Curated Picks' },
+              { num: 'PK', label: 'Crafted Lahore' },
+            ].map((pillar, i) => (
+              <motion.div
+                key={pillar.label}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.9 + i * 0.1 }}
+                className={cn(
+                  'text-center px-1',
+                  i === 1 && 'border-x border-accent/15'
+                )}
+              >
+                <div className="font-display italic text-2xl text-accent mb-1">
+                  {pillar.num}
+                </div>
+                <div className="text-[9px] uppercase tracking-widest text-muted leading-tight">
+                  {pillar.label}
+                </div>
+              </motion.div>
+            ))}
+          </div>
+
+          {/* Bottom flourish — drawn brush stroke */}
+          <motion.svg
+            viewBox="0 0 280 24"
+            className="w-full h-6 mt-8 text-accent/40"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="0.8"
+            strokeLinecap="round"
+          >
+            <motion.path
+              d="M10 12 Q 60 4 100 12 Q 140 20 180 12 Q 220 4 270 12"
+              initial={{ pathLength: 0 }}
+              animate={{ pathLength: 1 }}
+              transition={{ duration: 1.8, delay: 1.2, ease: 'easeOut' }}
+            />
+            {/* Center diamond accent */}
+            <motion.path
+              d="M140 8 L143 12 L140 16 L137 12 Z"
+              fill="currentColor"
+              stroke="none"
+              initial={{ opacity: 0, scale: 0 }}
+              animate={{ opacity: 0.8, scale: 1 }}
+              transition={{ duration: 0.5, delay: 2.4 }}
+            />
+          </motion.svg>
         </motion.div>
       </div>
 
-      {/* Scroll indicator */}
+      {/* Scroll indicator — desktop only (mobile uses natural scroll) */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 1.5, duration: 0.8 }}
-        className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 z-10"
+        className="absolute bottom-8 left-1/2 -translate-x-1/2 flex-col items-center gap-2 z-10 hidden md:flex"
       >
         <span className="text-[10px] uppercase tracking-widest text-muted">Scroll</span>
         <div className="w-px h-12 bg-muted/40 relative overflow-hidden">
@@ -190,11 +289,11 @@ export function Hero() {
 // Animated gold filigree ornament
 // Draws itself in with stroke-dasharray on mount.
 // ============================================
-function FiligreeOrnament() {
+function FiligreeOrnament({ size = 180 }: { size?: number }) {
   return (
     <svg
-      width="180"
-      height="180"
+      width={size}
+      height={size}
       viewBox="0 0 180 180"
       fill="none"
       stroke="#B08D5A"

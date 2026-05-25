@@ -3,8 +3,9 @@
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, User, ShoppingBag, Menu, X, LogOut, LayoutDashboard } from 'lucide-react';
+import { Search, User, ShoppingBag, Menu, X, LogOut, LayoutDashboard, ArrowRight, Mail, Instagram, UserPlus } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { useStore } from '@/lib/store';
 import { cn } from '@/lib/utils';
@@ -48,6 +49,12 @@ function HeaderInner() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+
+  // Portal mount flag — drawer renders at document.body to escape
+  // the header's `backdrop-blur-md` containing block (which would
+  // otherwise constrain fixed-positioned children to header bounds).
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   // Load session + cart count on mount.
   // Show local cart count immediately (synchronous) so the badge doesn't flash empty.
@@ -186,17 +193,18 @@ function HeaderInner() {
 
         {/* Actions (right) */}
         <div className="flex justify-end items-center gap-4">
+          {/* Search — visible on all screens (replaces account icon on mobile) */}
           <button
             onClick={() => setSearchOpen(true)}
-            className="nav-icon-btn hidden md:flex"
+            className="nav-icon-btn"
             aria-label="Search"
           >
             <Search size={20} />
           </button>
 
-          {/* Account icon — dropdown if logged in, link if not */}
+          {/* Account icon — desktop only (mobile uses drawer's account section) */}
           {user ? (
-            <div className="relative">
+            <div className="relative hidden md:block">
               <button
                 className="nav-icon-btn"
                 onClick={(e) => {
@@ -260,7 +268,7 @@ function HeaderInner() {
               </AnimatePresence>
             </div>
           ) : (
-            <Link href="/login" className="nav-icon-btn" aria-label="Sign in">
+            <Link href="/login" className="nav-icon-btn hidden md:flex" aria-label="Sign in">
               <User size={20} />
             </Link>
           )}
@@ -273,69 +281,196 @@ function HeaderInner() {
         </div>
       </nav>
 
-      {/* Mobile drawer */}
-      <AnimatePresence>
-        {mobileOpen && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="md:hidden fixed inset-0 bg-ink/30 z-40"
-              onClick={() => setMobileOpen(false)}
-            />
-            <motion.aside
-              initial={{ x: '-100%' }}
-              animate={{ x: 0 }}
-              exit={{ x: '-100%' }}
-              transition={{ type: 'tween', duration: 0.3, ease: 'easeOut' }}
-              className="md:hidden fixed inset-y-0 left-0 w-[80%] max-w-sm bg-cream z-50 flex flex-col"
-            >
-              <div className="flex justify-between items-center p-6 border-b border-border">
-                <span className="font-display text-xl">
-                  Maison <span className="text-accent italic">Aurelle</span>
-                </span>
-                <button
-                  className="nav-icon-btn"
-                  onClick={() => setMobileOpen(false)}
-                  aria-label="Close menu"
-                >
-                  <X size={22} />
-                </button>
-              </div>
-
-              <ul className="flex flex-col p-6 gap-5">
-                {NAV_LINKS.map((link) => (
-                  <li key={link.href}>
-                    <Link
-                      href={link.href}
-                      className="text-sm font-medium tracking-wider uppercase"
-                    >
-                      {link.label}
-                    </Link>
-                  </li>
-                ))}
-                <li>
-                  <button
-                    onClick={() => {
-                      setMobileOpen(false);
-                      setTimeout(() => setSearchOpen(true), 250);
-                    }}
-                    className="flex items-center gap-3 text-sm font-medium tracking-wider uppercase text-accent"
-                  >
-                    <Search size={16} /> Search
-                  </button>
-                </li>
-              </ul>
-            </motion.aside>
-          </>
-        )}
-      </AnimatePresence>
-
       {/* Search overlay — only mounted after first open (keeps initial bundle lean) */}
       {searchOpen && (
         <SearchOverlay open={searchOpen} onClose={() => setSearchOpen(false)} />
       )}
+
+      {/* Mobile drawer — portaled to document.body to escape header's
+          backdrop-filter containing block (CSS spec quirk that would
+          otherwise constrain fixed children to header bounds) */}
+      {mounted &&
+        createPortal(
+          <AnimatePresence>
+            {mobileOpen && (
+              <>
+                {/* Dim + blur backdrop covering the whole page */}
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="md:hidden fixed inset-0 bg-ink/60 backdrop-blur-sm z-[100]"
+                  onClick={() => setMobileOpen(false)}
+                />
+
+                {/* Drawer */}
+                <motion.aside
+                  initial={{ x: '-100%' }}
+                  animate={{ x: 0 }}
+                  exit={{ x: '-100%' }}
+                  transition={{ type: 'tween', duration: 0.3, ease: 'easeOut' }}
+                  className="md:hidden fixed inset-y-0 left-0 w-[75%] max-w-[300px] bg-cream z-[101] flex flex-col shadow-large overflow-y-auto"
+                >
+                  {/* Header strip */}
+                  <div className="flex justify-between items-center px-6 py-5 border-b border-border">
+                    <Link
+                      href="/"
+                      onClick={() => setMobileOpen(false)}
+                      className="font-display text-2xl"
+                    >
+                      Maison <span className="text-accent italic">Aurelle</span>
+                    </Link>
+                    <button
+                      className="nav-icon-btn"
+                      onClick={() => setMobileOpen(false)}
+                      aria-label="Close menu"
+                    >
+                      <X size={22} />
+                    </button>
+                  </div>
+
+                  {/* Account section */}
+                  {user ? (
+                    <div className="px-6 py-5 border-b border-border bg-gradient-to-br from-cream-200/60 to-cream">
+                      <div className="text-[10px] uppercase tracking-[0.25em] text-accent mb-1 font-medium">
+                        Signed in as
+                      </div>
+                      <div className="font-display text-xl mb-4">
+                        {user.firstName} {user.lastName}
+                      </div>
+                      <div className="space-y-2">
+                        {user.role === 'admin' && (
+                          <Link
+                            href="/admin"
+                            onClick={() => setMobileOpen(false)}
+                            className="flex items-center gap-2.5 text-sm text-accent hover:translate-x-1 transition-transform"
+                          >
+                            <LayoutDashboard size={14} /> Admin Dashboard
+                          </Link>
+                        )}
+                        <Link
+                          href="/cart"
+                          onClick={() => setMobileOpen(false)}
+                          className="flex items-center gap-2.5 text-sm hover:translate-x-1 transition-transform"
+                        >
+                          <ShoppingBag size={14} /> My Bag
+                          {cartCount > 0 && (
+                            <span className="text-[10px] text-accent">({cartCount})</span>
+                          )}
+                        </Link>
+                        <button
+                          onClick={() => {
+                            setMobileOpen(false);
+                            handleLogout();
+                          }}
+                          className="flex items-center gap-2.5 text-sm text-error hover:translate-x-1 transition-transform"
+                        >
+                          <LogOut size={14} /> Sign Out
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="px-6 py-5 border-b border-border bg-gradient-to-br from-cream-200/60 to-cream">
+                      <div className="text-[10px] uppercase tracking-[0.25em] text-accent mb-2 font-medium">
+                        Your Atelier Account
+                      </div>
+                      <p className="text-xs text-muted leading-relaxed mb-4">
+                        Sign in for AI-curated picks, saved addresses &amp; faster checkout.
+                      </p>
+                      <div className="grid grid-cols-2 gap-2">
+                        <Link
+                          href="/login"
+                          onClick={() => setMobileOpen(false)}
+                          className="flex items-center justify-center gap-2 py-2.5 bg-ink text-cream text-[10px] uppercase tracking-widest font-medium"
+                        >
+                          <User size={12} /> Sign In
+                        </Link>
+                        <Link
+                          href="/register"
+                          onClick={() => setMobileOpen(false)}
+                          className="flex items-center justify-center gap-2 py-2.5 bg-transparent text-ink border border-ink text-[10px] uppercase tracking-widest font-medium"
+                        >
+                          <UserPlus size={12} /> Register
+                        </Link>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Section heading */}
+                  <div className="px-6 pt-6 pb-3">
+                    <div className="text-[10px] uppercase tracking-[0.3em] text-muted-light font-medium">
+                      Browse
+                    </div>
+                  </div>
+
+                  {/* Nav links */}
+                  <ul className="flex-1 px-6 pb-6">
+                    {NAV_LINKS.map((link) => {
+                      const active = isActive(link.href);
+                      return (
+                        <li key={link.href}>
+                          <Link
+                            href={link.href}
+                            onClick={() => setMobileOpen(false)}
+                            className={cn(
+                              'group flex items-center justify-between py-3.5 border-b border-border/60 text-sm font-medium tracking-wider uppercase transition-colors',
+                              active ? 'text-accent' : 'text-ink hover:text-accent'
+                            )}
+                          >
+                            <span>{link.label}</span>
+                            <ArrowRight
+                              size={14}
+                              className={cn(
+                                'transition-all',
+                                active
+                                  ? 'opacity-100 text-accent'
+                                  : 'opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0'
+                              )}
+                            />
+                          </Link>
+                        </li>
+                      );
+                    })}
+                  </ul>
+
+                  {/* Bottom decorative section */}
+                  <div className="px-6 py-6 border-t border-border bg-ink text-cream">
+                    <p
+                      className="text-center text-2xl mb-4 text-cream/90"
+                      style={{ fontFamily: 'var(--font-script)' }}
+                    >
+                      an atelier where heritage breathes
+                    </p>
+                    <div className="flex items-center justify-center gap-5 text-cream/60">
+                      <a
+                        href="mailto:hello@maisonaurelle.pk"
+                        className="hover:text-accent transition-colors"
+                        aria-label="Email"
+                      >
+                        <Mail size={16} />
+                      </a>
+                      <span className="w-1 h-1 rounded-full bg-cream/30" />
+                      <a
+                        href="https://instagram.com"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="hover:text-accent transition-colors"
+                        aria-label="Instagram"
+                      >
+                        <Instagram size={16} />
+                      </a>
+                    </div>
+                    <div className="text-center mt-4 text-[9px] uppercase tracking-[0.3em] text-cream/40">
+                      Est. 2026 · Lahore
+                    </div>
+                  </div>
+                </motion.aside>
+              </>
+            )}
+          </AnimatePresence>,
+          document.body
+        )}
     </header>
   );
 }

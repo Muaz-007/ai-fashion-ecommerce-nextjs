@@ -1,0 +1,106 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --font-display: 'Cormorant Garamond', 'Times New Roman', serif;
+    --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-script: 'Italianno', cursive;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-cream text-ink font-body antialiased;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display font-normal tracking-tight;
+  }
+
+  ::selection {
+    @apply bg-accent text-cream;
+  }
+}
+
+@layer components {
+  /* Eyebrow text — small uppercase label */
+  .eyebrow {
+    @apply text-eyebrow uppercase tracking-widest text-accent font-medium;
+  }
+
+  /* Container with consistent padding */
+  .container-padded {
+    @apply max-w-container mx-auto px-5 sm:px-8;
+  }
+
+  /* Section spacing */
+  .section {
+    @apply py-16 md:py-24;
+  }
+
+  .section-lg {
+    @apply py-20 md:py-36;
+  }
+
+  /* Premium buttons */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 px-9 py-4 text-xs font-medium uppercase tracking-wider transition-all duration-300 ease-smooth cursor-pointer whitespace-nowrap;
+  }
+
+  .btn-primary {
+    @apply bg-ink text-cream border border-ink hover:bg-accent-300 hover:border-accent-300 hover:-translate-y-0.5 hover:shadow-medium;
+  }
+
+  .btn-secondary {
+    @apply bg-transparent text-ink border border-ink hover:bg-ink hover:text-cream;
+  }
+
+  .btn-light {
+    @apply bg-cream text-ink hover:bg-accent hover:text-cream;
+  }
+
+  .btn-outline-light {
+    @apply bg-transparent text-cream border border-cream hover:bg-cream hover:text-ink;
+  }
+
+  /* Form inputs - minimalist underline style */
+  .form-input {
+    @apply w-full py-3 px-0 bg-transparent border-0 border-b border-border text-ink placeholder:text-muted-light focus:outline-none focus:border-accent transition-colors;
+  }
+
+  .form-label {
+    @apply block text-xs uppercase tracking-wider font-medium mb-2;
+  }
+
+  /* Nav icon button */
+  .nav-icon-btn {
+    @apply flex items-center justify-center w-10 h-10 rounded-full text-ink transition-all hover:bg-cream-200 hover:text-accent relative;
+  }
+
+  /* Cart count badge */
+  .cart-badge {
+    @apply absolute top-1 right-1 bg-accent text-cream text-[10px] w-[18px] h-[18px] rounded-full flex items-center justify-center font-semibold;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  /* Scrollbar styling */
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    @apply bg-border rounded-full;
+  }
+  .scrollbar-thin::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+}

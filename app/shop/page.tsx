@@ -4,8 +4,8 @@ import { Toast } from '@/components/Toast';
 import { ShopClient } from './ShopClient';
 import { prisma } from '@/lib/prisma';
 
-// Cache the shop page for 60s — categories & product list rarely change
-export const revalidate = 60;
+// Render on request — DB is needed at runtime, not build time.
+export const dynamic = 'force-dynamic';
 
 interface PageProps {
   searchParams: Promise<{ category?: string; search?: string }>;

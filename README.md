@@ -1,5 +1,7 @@
 # Maison Aurelle
 
+**Live:** <!-- TODO: production URL paste karo yahan -->
+
 Maison Aurelle is a Pakistani fashion boutique — cream-and-gold pieces with the quiet confidence of restrained luxury. This repository is its storefront.
 
 The recommendation system here is the thing I'm proud of. Most stores either show whatever the default algorithm picks, or wire up some heavyweight ML service that doesn't really know the catalogue. I wrote a small hybrid engine that does three things: watches what a shopper does over their last month of visits, finds patterns in their own behaviour, and pairs that with similarity and co-purchase signals from real order history. No external service, no black box. You can read the code and predict what it will recommend.

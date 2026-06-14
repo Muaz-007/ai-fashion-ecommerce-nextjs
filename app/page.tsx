@@ -12,9 +12,8 @@ import { AISection } from '@/components/AISection';
 import { prisma } from '@/lib/prisma';
 import { getPersonalizedRecommendations } from '@/lib/recommendations';
 
-// Revalidate every 60s instead of rebuilding on every request.
-// Guest homepage data rarely changes — caching is safe.
-export const revalidate = 60;
+// Render on request — DB is needed at runtime, not build time.
+export const dynamic = 'force-dynamic';
 
 export default async function HomePage() {
   // Fetch everything in parallel — saves serial RTT latency

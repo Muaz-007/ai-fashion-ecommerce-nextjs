@@ -9,8 +9,8 @@ import { SectionHeader } from '@/components/SectionHeader';
 import { prisma } from '@/lib/prisma';
 import { getSimilarProducts, getFrequentlyBoughtTogether } from '@/lib/recommendations';
 
-// Product detail rarely changes — 5 min ISR is plenty
-export const revalidate = 300;
+// Render on request — DB is needed at runtime, not build time.
+export const dynamic = 'force-dynamic';
 
 interface PageProps {
   params: Promise<{ slug: string }>;

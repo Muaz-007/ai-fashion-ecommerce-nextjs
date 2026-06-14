@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { Search } from 'lucide-react';
+import { Search, ChevronRight } from 'lucide-react';
+import Link from 'next/link';
 import { Select } from '@/components/Select';
 import { formatPrice, cn } from '@/lib/utils';
 
@@ -101,12 +102,13 @@ export function OrdersClient({ initialOrders }: { initialOrders: Order[] }) {
               <th className="text-left p-4 font-semibold hidden lg:table-cell">Payment</th>
               <th className="text-center p-4 font-semibold">Status</th>
               <th className="text-right p-4 font-semibold">Total</th>
+              <th className="w-12"></th>
             </tr>
           </thead>
           <tbody>
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={6} className="text-center py-16 text-muted">
+                <td colSpan={7} className="text-center py-16 text-muted">
                   No orders match the filters.
                 </td>
               </tr>
@@ -114,10 +116,21 @@ export function OrdersClient({ initialOrders }: { initialOrders: Order[] }) {
               filtered.map((order) => (
                 <tr
                   key={order.id}
-                  className="border-t border-border hover:bg-cream-200/50 transition-colors"
+                  className="border-t border-border hover:bg-cream-200/50 transition-colors cursor-pointer group"
+                  onClick={(e) => {
+                    // Don't hijack clicks on selects, inputs, or anchors inside the row.
+                    const target = e.target as HTMLElement;
+                    if (target.closest('a, button, input, select, textarea')) return;
+                    window.location.href = `/admin/orders/${order.id}`;
+                  }}
                 >
                   <td className="p-4">
-                    <div className="font-medium font-mono text-xs">{order.orderNumber}</div>
+                    <Link
+                      href={`/admin/orders/${order.id}`}
+                      className="font-medium font-mono text-xs hover:text-accent transition-colors"
+                    >
+                      {order.orderNumber}
+                    </Link>
                     <div className="text-xs text-muted-light">{order.itemCount} items</div>
                   </td>
                   <td className="p-4">
@@ -172,6 +185,9 @@ export function OrdersClient({ initialOrders }: { initialOrders: Order[] }) {
                     </span>
                   </td>
                   <td className="p-4 text-right font-medium">{formatPrice(order.total)}</td>
+                  <td className="p-4 text-muted-light group-hover:text-accent transition-colors">
+                    <ChevronRight size={16} />
+                  </td>
                 </tr>
               ))
             )}
